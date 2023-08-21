@@ -1,17 +1,30 @@
 use anyhow::Result;
+use clap::Parser;
 use log::{error, info};
 use shared::Message;
 use std::{
     io::prelude::*,
-    net::{TcpListener, TcpStream},
+    net::{IpAddr, Ipv4Addr, SocketAddr, TcpListener, TcpStream},
     thread,
 };
+
+#[derive(Parser)]
+#[command(author, version, about, long_about = None)]
+struct Cli {
+    #[arg(short, long, default_value_t = IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)))]
+    addr: IpAddr,
+
+    #[arg(short, long, default_value_t = 8080, value_parser = clap::value_parser!(u16).range(1..))]
+    port: u16,
+}
 
 fn main() -> Result<()> {
     env_logger::init();
 
+    let cli = Cli::parse();
+
     // Note the `?`
-    let listener = TcpListener::bind("localhost:8080")?;
+    let listener = TcpListener::bind(SocketAddr::new(cli.addr, cli.port))?;
 
     info!("Listening @{}", listener.local_addr()?);
 
